@@ -6,3 +6,5 @@
 - [x] Construir suscripciones con altas, filtros y estados.
 - [x] Simular notificaciones y pagos.
 - [x] Validar la maqueta en escritorio y móvil.
+- [ ] Separar inventarios, clientes, suscripciones, notificaciones y pagos por local.
+- [ ] Validar el cambio de local en todos los módulos.
