@@ -1,24 +1,151 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { toast, Toaster } from "sonner";
+import {
+  Bell, Box, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, CircleDollarSign,
+  Clock3, CreditCard, Eye, LayoutDashboard, Mail, Menu, MessageCircle, MoreHorizontal,
+  PackageCheck, PawPrint, Pencil, Plus, Search, Send, ShoppingBag, Store, Trash2,
+  TrendingUp, Users, X, AlertTriangle, CheckCircle2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({ meta: [
+    { title: "PetShop Manager | Panel de gestión" },
+    { name: "description", content: "Panel multitienda para gestionar inventario, suscripciones, entregas y pagos." },
+    { property: "og:title", content: "PetShop Manager | Panel de gestión" },
+    { property: "og:description", content: "Panel multitienda para gestionar inventario, suscripciones, entregas y pagos." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary_large_image" },
+  ] }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
+type View = "dashboard" | "inventory" | "subscriptions" | "integrations";
+type Product = { id: number; name: string; category: string; price: number; stock: number; min: number; sku: string };
+type Subscription = { id: number; customer: string; email: string; phone: string; product: string; frequency: number; status: string; amount: number; next: string; payment: string };
+
+const initialProducts: Product[] = [
+  { id: 1, name: "Royal Canin Adulto 15 kg", category: "Alimentos", price: 68900, stock: 8, min: 10, sku: "ALI-1042" },
+  { id: 2, name: "Arena aglomerante Fresh 10 kg", category: "Arena Sanitaria", price: 18400, stock: 6, min: 8, sku: "ARE-2081" },
+  { id: 3, name: "Shampoo neutro PetCare", category: "Higiene", price: 11200, stock: 24, min: 6, sku: "HIG-3024" },
+  { id: 4, name: "Correa reflectiva Lima", category: "Accesorios", price: 14900, stock: 18, min: 5, sku: "ACC-4107" },
+  { id: 5, name: "Excellent Gato Adulto 7,5 kg", category: "Alimentos", price: 42700, stock: 4, min: 7, sku: "ALI-1058" },
+  { id: 6, name: "Cepillo doble Bamboo", category: "Higiene", price: 9800, stock: 15, min: 5, sku: "HIG-3070" },
+];
+
+const initialSubscriptions: Subscription[] = [
+  { id: 1, customer: "Marina López", email: "marina@email.com", phone: "+54 9 11 3890 2214", product: "Royal Canin Adulto 15 kg", frequency: 30, status: "Activa", amount: 68900, next: "Hoy, 14:30", payment: "Aprobado" },
+  { id: 2, customer: "Santiago Ríos", email: "santi@email.com", phone: "+54 9 11 5521 9012", product: "Arena aglomerante Fresh 10 kg", frequency: 15, status: "Pendiente de Pago", amount: 36800, next: "Hoy, 17:00", payment: "Pendiente" },
+  { id: 3, customer: "Julieta Acosta", email: "juli@email.com", phone: "+54 9 11 6810 4420", product: "Excellent Gato Adulto 7,5 kg", frequency: 30, status: "Activa", amount: 42700, next: "Mañana, 10:00", payment: "Aprobado" },
+  { id: 4, customer: "Tomás Méndez", email: "tomas@email.com", phone: "+54 9 11 2219 1305", product: "Shampoo neutro PetCare", frequency: 60, status: "Pausada", amount: 22400, next: "28 Sep, 12:00", payment: "Aprobado" },
+  { id: 5, customer: "Carolina Vega", email: "caro@email.com", phone: "+54 9 11 4900 8112", product: "Royal Canin Adulto 15 kg", frequency: 45, status: "Activa", amount: 68900, next: "30 Sep, 09:30", payment: "Aprobado" },
+];
+
+const money = (n: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
+const inputClass = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-hidden transition focus:border-primary focus:ring-3 focus:ring-ring/15";
+
 function Index() {
+  const [view, setView] = useState<View>("dashboard");
+  const [products, setProducts] = useState(initialProducts);
+  const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
+  const [store, setStore] = useState("Palermo Soho");
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [modal, setModal] = useState<null | "product" | "subscription" | "detail" | "payment">(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [selected, setSelected] = useState<Subscription | Product | null>(null);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("Todas");
+  const [statusFilter, setStatusFilter] = useState("Todas");
+
+  const lowStock = products.filter((p) => p.stock <= p.min);
+  const active = subscriptions.filter((s) => s.status === "Activa");
+  const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) && (category === "Todas" || p.category === category));
+  const filteredSubscriptions = subscriptions.filter((s) => statusFilter === "Todas" || s.status === statusFilter);
+
+  const navigate = (next: View) => { setView(next); setMobileOpen(false); };
+
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background text-foreground">
+      <Toaster position="top-right" richColors />
+      {mobileOpen && <button aria-label="Cerrar menú" className="fixed inset-0 z-30 bg-foreground/30 lg:hidden" onClick={() => setMobileOpen(false)} />}
+      <Sidebar view={view} navigate={navigate} store={store} setStore={setStore} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} />
+      <div className={cn("min-h-screen transition-[margin] duration-300", collapsed ? "lg:ml-20" : "lg:ml-64")}>
+        <Header view={view} store={store} openMenu={() => setMobileOpen(true)} />
+        <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
+          {view === "dashboard" && <Dashboard subscriptions={subscriptions} lowStock={lowStock} go={navigate} />}
+          {view === "inventory" && <Inventory products={filteredProducts} search={search} setSearch={setSearch} category={category} setCategory={setCategory} onAdd={() => { setEditingProduct(null); setModal("product"); }} onEdit={(p) => { setEditingProduct(p); setModal("product"); }} onDetail={(p) => { setSelected(p); setModal("detail"); }} onDelete={(p) => { setProducts((all) => all.filter((x) => x.id !== p.id)); toast.success(`${p.name} fue eliminado`); }} />}
+          {view === "subscriptions" && <Subscriptions items={filteredSubscriptions} filter={statusFilter} setFilter={setStatusFilter} onAdd={() => setModal("subscription")} onNotify={(s, channel) => toast.success(`Recordatorio enviado por ${channel}`, { description: `Destinatario: ${s.customer}` })} onPay={(s) => { setSelected(s); setModal("payment"); }} onStatus={(id, value) => setSubscriptions((all) => all.map((s) => s.id === id ? { ...s, status: value } : s))} />}
+          {view === "integrations" && <Integrations subscriptions={subscriptions} onNotify={(s, channel) => toast.success(`Mensaje enviado por ${channel}`, { description: `${s.customer} recibió el recordatorio.` })} onPay={(s) => { setSelected(s); setModal("payment"); }} />}
+        </main>
+      </div>
+      {modal === "product" && <ProductModal product={editingProduct} close={() => setModal(null)} save={(data) => { if (editingProduct) setProducts((all) => all.map((p) => p.id === editingProduct.id ? { ...p, ...data } : p)); else setProducts((all) => [...all, { ...data, id: Date.now(), sku: `PRO-${String(all.length + 1).padStart(4, "0")}` }]); setModal(null); toast.success(editingProduct ? "Producto actualizado" : "Producto agregado"); }} />}
+      {modal === "subscription" && <SubscriptionModal products={products} close={() => setModal(null)} save={(data) => { setSubscriptions((all) => [...all, { ...data, id: Date.now(), amount: products.find((p) => p.name === data.product)?.price ?? 0, next: "A programar", status: "Activa", payment: "Pendiente" }]); setModal(null); toast.success("Suscripción creada"); }} />}
+      {modal === "detail" && selected && <DetailModal item={selected as Product} close={() => setModal(null)} />}
+      {modal === "payment" && selected && <PaymentModal subscription={selected as Subscription} close={() => setModal(null)} process={() => { const id = (selected as Subscription).id; setSubscriptions((all) => all.map((s) => s.id === id ? { ...s, payment: "Aprobado", status: "Activa" } : s)); setModal(null); toast.success("Pago procesado con éxito"); }} />}
     </div>
   );
 }
+
+const navItems = [
+  { id: "dashboard" as View, label: "Inicio", icon: LayoutDashboard },
+  { id: "inventory" as View, label: "Inventario", icon: Box },
+  { id: "subscriptions" as View, label: "Suscripciones", icon: Users },
+  { id: "integrations" as View, label: "Notificaciones y pagos", icon: Bell },
+];
+
+function Sidebar({ view, navigate, store, setStore, collapsed, setCollapsed, mobileOpen }: { view: View; navigate: (v: View) => void; store: string; setStore: (s: string) => void; collapsed: boolean; setCollapsed: (v: boolean) => void; mobileOpen: boolean }) {
+  return <aside className={cn("fixed inset-y-0 left-0 z-40 flex flex-col bg-sidebar text-sidebar-foreground shadow-xl transition-all duration-300", collapsed ? "w-20" : "w-64", mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0")}>
+    <div className="flex h-20 items-center gap-3 border-b border-sidebar-border px-5">
+      <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground"><PawPrint className="size-6" /></div>
+      {!collapsed && <div><div className="font-display text-base font-extrabold">PetShop</div><div className="text-xs font-semibold text-sidebar-primary">Manager</div></div>}
+    </div>
+    <div className="p-3">
+      {!collapsed && <label className="mb-2 block px-2 text-[10px] font-bold uppercase text-sidebar-foreground/50">Local activo</label>}
+      <div className="relative">
+        <Store className="pointer-events-none absolute left-3 top-3 size-4 text-sidebar-primary" />
+        <select aria-label="Local activo" value={store} onChange={(e) => setStore(e.target.value)} className={cn("h-10 w-full appearance-none rounded-lg border border-sidebar-border bg-sidebar-accent pl-9 pr-7 text-xs font-semibold outline-hidden", collapsed && "text-transparent")}>
+          <option>Palermo Soho</option><option>Belgrano</option><option>Caballito</option>
+        </select>
+        {!collapsed && <ChevronDown className="pointer-events-none absolute right-2 top-3 size-4" />}
+      </div>
+    </div>
+    <nav className="flex-1 space-y-1 px-3 py-3">{navItems.map(({ id, label, icon: Icon }) => <button key={id} title={collapsed ? label : undefined} onClick={() => navigate(id)} className={cn("flex h-11 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-semibold transition", view === id ? "bg-sidebar-primary text-sidebar-primary-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground")}><Icon className="size-5 shrink-0" />{!collapsed && <span>{label}</span>}</button>)}</nav>
+    <div className="border-t border-sidebar-border p-3">
+      <div className={cn("mb-3 flex items-center gap-3 rounded-lg bg-sidebar-accent p-2", collapsed && "justify-center")}><div className="grid size-8 shrink-0 place-items-center rounded-full bg-accent text-xs font-bold text-accent-foreground">BT</div>{!collapsed && <div className="min-w-0"><p className="truncate text-xs font-bold">Brian Tomadin</p><p className="text-[10px] text-sidebar-foreground/55">Administrador</p></div>}</div>
+      <button aria-label={collapsed ? "Expandir menú" : "Contraer menú"} onClick={() => setCollapsed(!collapsed)} className="hidden h-9 w-full items-center justify-center rounded-lg text-sidebar-foreground/60 hover:bg-sidebar-accent lg:flex">{collapsed ? <ChevronRight className="size-4" /> : <ChevronLeft className="size-4" />}</button>
+    </div>
+  </aside>;
+}
+
+const titles: Record<View, [string, string]> = { dashboard: ["Buenos días, Brian", "Esto es lo que está pasando en tu tienda."], inventory: ["Gestión de inventario", "Controlá productos, precios y niveles de stock."], subscriptions: ["Gestión de suscripciones", "Administrá clientes y entregas recurrentes."], integrations: ["Notificaciones y pagos", "Simulá comunicaciones y cobros de tus planes."] };
+function Header({ view, store, openMenu }: { view: View; store: string; openMenu: () => void }) { return <header className="sticky top-0 z-20 flex min-h-20 items-center justify-between border-b border-border bg-card/95 px-4 backdrop-blur sm:px-6 lg:px-8"><div className="flex items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" onClick={openMenu} aria-label="Abrir menú"><Menu /></Button><div><h1 className="font-display text-lg font-bold sm:text-xl">{titles[view][0]}</h1><p className="hidden text-xs text-muted-foreground sm:block">{titles[view][1]}</p></div></div><div className="flex items-center gap-2"><div className="hidden items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-xs font-semibold md:flex"><Store className="size-4 text-primary" />{store}</div><Button variant="secondary" size="icon" aria-label="Notificaciones"><Bell /></Button></div></header> }
+
+function SectionHeading({ title, text, action }: { title: string; text?: string; action?: ReactNode }) { return <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><h2 className="font-display text-xl font-bold">{title}</h2>{text && <p className="mt-1 text-sm text-muted-foreground">{text}</p>}</div>{action}</div> }
+function StatCard({ icon: Icon, label, value, note, tone = "primary" }: { icon: typeof Users; label: string; value: string; note: string; tone?: "primary" | "accent" | "warning" }) { return <article className="animate-rise rounded-lg border border-border bg-card p-5 shadow-xs"><div className="flex items-start justify-between"><div className={cn("grid size-10 place-items-center rounded-lg", tone === "accent" ? "bg-accent/30 text-accent-foreground" : tone === "warning" ? "bg-chart-4/20 text-chart-1" : "bg-primary/10 text-primary")}><Icon /></div><TrendingUp className="size-4 text-accent-foreground" /></div><p className="mt-5 text-sm font-medium text-muted-foreground">{label}</p><p className="mt-1 font-display text-2xl font-extrabold">{value}</p><p className="mt-2 text-xs text-muted-foreground">{note}</p></article> }
+
+function Dashboard({ subscriptions, lowStock, go }: { subscriptions: Subscription[]; lowStock: Product[]; go: (v: View) => void }) {
+  const revenue = subscriptions.filter((s) => s.status === "Activa").reduce((sum, s) => sum + s.amount * (30 / s.frequency), 0);
+  return <div className="space-y-8"><section><SectionHeading title="Resumen del negocio" text="Datos actualizados de la operación diaria" /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><StatCard icon={Users} label="Suscripciones activas" value={String(subscriptions.filter((s) => s.status === "Activa").length)} note="2 nuevas este mes" /><StatCard icon={CircleDollarSign} label="Ingreso mensual estimado" value={money(revenue)} note="Proyección recurrente" tone="accent" /><StatCard icon={AlertTriangle} label="Alertas de stock" value={String(lowStock.length)} note="Requieren reposición" tone="warning" /><StatCard icon={PackageCheck} label="Próximas entregas" value="12" note="4 hoy · 8 esta semana" /></div></section>
+  <div className="grid gap-6 xl:grid-cols-[1.65fr_1fr]"><section><SectionHeading title="Próximas entregas" text="Pedidos a preparar y despachar" action={<Button variant="secondary" size="sm" onClick={() => go("subscriptions")}>Ver todas <ChevronRight /></Button>} /><div className="overflow-hidden rounded-lg border border-border bg-card shadow-xs"><div className="overflow-x-auto"><table className="w-full min-w-[640px] text-left"><thead className="bg-secondary/70 text-xs uppercase text-muted-foreground"><tr><th className="px-5 py-3">Cliente</th><th>Producto</th><th>Entrega</th><th>Estado</th></tr></thead><tbody className="divide-y divide-border">{subscriptions.slice(0, 4).map((s) => <tr key={s.id} className="text-sm hover:bg-secondary/35"><td className="px-5 py-4 font-semibold">{s.customer}</td><td className="max-w-52 truncate pr-4 text-muted-foreground">{s.product}</td><td className="pr-4"><span className="flex items-center gap-2"><Clock3 className="size-4 text-primary" />{s.next}</span></td><td><Badge value={s.status} /></td></tr>)}</tbody></table></div></div></section>
+  <section><SectionHeading title="Stock crítico" text="Productos bajo el mínimo" action={<Button variant="ghost" size="sm" onClick={() => go("inventory")}>Gestionar</Button>} /><div className="space-y-3">{lowStock.map((p) => <div key={p.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-xs"><div className="grid size-10 place-items-center rounded-lg bg-destructive/10 text-destructive"><ShoppingBag /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{p.name}</p><p className="text-xs text-muted-foreground">Mínimo recomendado: {p.min}</p></div><div className="text-right"><p className="font-display text-xl font-bold text-destructive">{p.stock}</p><p className="text-[10px] uppercase text-muted-foreground">unidades</p></div></div>)}</div></section></div></div>;
+}
+
+function Inventory({ products, search, setSearch, category, setCategory, onAdd, onEdit, onDetail, onDelete }: { products: Product[]; search: string; setSearch: (s:string)=>void; category:string; setCategory:(s:string)=>void; onAdd:()=>void; onEdit:(p:Product)=>void; onDetail:(p:Product)=>void; onDelete:(p:Product)=>void }) { return <section><SectionHeading title="Productos" text={`${products.length} productos encontrados`} action={<Button onClick={onAdd}><Plus />Agregar producto</Button>} /><div className="mb-4 flex flex-col gap-3 rounded-lg border border-border bg-card p-3 sm:flex-row"><div className="relative flex-1"><Search className="absolute left-3 top-3 size-4 text-muted-foreground" /><input value={search} onChange={(e)=>setSearch(e.target.value)} placeholder="Buscar por nombre..." className={cn(inputClass,"pl-9")} /></div><select value={category} onChange={(e)=>setCategory(e.target.value)} className={cn(inputClass,"sm:w-52")}><option>Todas</option><option>Alimentos</option><option>Arena Sanitaria</option><option>Higiene</option><option>Accesorios</option></select></div><div className="overflow-hidden rounded-lg border border-border bg-card shadow-xs"><div className="overflow-x-auto"><table className="w-full min-w-[780px] text-left"><thead className="bg-secondary/70 text-xs uppercase text-muted-foreground"><tr><th className="px-5 py-3">Producto</th><th>Categoría</th><th>Precio</th><th>Stock</th><th className="pr-5 text-right">Acciones</th></tr></thead><tbody className="divide-y divide-border">{products.map((p)=><tr key={p.id} className="text-sm hover:bg-secondary/30"><td className="px-5 py-4"><p className="font-bold">{p.name}</p><p className="text-xs text-muted-foreground">{p.sku}</p></td><td><Badge value={p.category} /></td><td className="font-semibold">{money(p.price)}</td><td><span className={cn("font-bold",p.stock<=p.min&&"text-destructive")}>{p.stock}</span><span className="text-muted-foreground"> / mín. {p.min}</span></td><td className="pr-5"><div className="flex justify-end gap-1"><Button variant="ghost" size="icon" title="Ver detalle" onClick={()=>onDetail(p)}><Eye /></Button><Button variant="ghost" size="icon" title="Editar" onClick={()=>onEdit(p)}><Pencil /></Button><Button variant="danger" size="icon" title="Eliminar" onClick={()=>onDelete(p)}><Trash2 /></Button></div></td></tr>)}</tbody></table></div>{products.length===0&&<Empty text="No encontramos productos con esos filtros."/>}</div></section> }
+
+function Subscriptions({ items, filter, setFilter, onAdd, onNotify, onPay, onStatus }: { items:Subscription[]; filter:string; setFilter:(s:string)=>void; onAdd:()=>void; onNotify:(s:Subscription,c:string)=>void; onPay:(s:Subscription)=>void; onStatus:(id:number,v:string)=>void }) { const filters=["Todas","Activa","Pausada","Pendiente de Pago","Cancelada"]; return <section><SectionHeading title="Planes recurrentes" text={`${items.length} suscripciones`} action={<Button onClick={onAdd}><Plus />Nueva suscripción</Button>} /><div className="mb-5 flex gap-2 overflow-x-auto pb-1">{filters.map((f)=><Button key={f} size="sm" variant={filter===f?"default":"secondary"} onClick={()=>setFilter(f)}>{f}</Button>)}</div><div className="grid gap-4 lg:grid-cols-2">{items.map((s)=><article key={s.id} className="rounded-lg border border-border bg-card p-5 shadow-xs transition hover:-translate-y-px hover:shadow-sm"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 gap-3"><div className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary font-bold text-primary">{s.customer.split(" ").map(x=>x[0]).join("")}</div><div className="min-w-0"><h3 className="truncate font-display font-bold">{s.customer}</h3><p className="truncate text-xs text-muted-foreground">{s.email}</p></div></div><Badge value={s.status}/></div><div className="my-4 grid grid-cols-2 gap-3 rounded-lg bg-secondary/55 p-3 text-sm"><div><p className="text-xs text-muted-foreground">Producto</p><p className="mt-1 truncate font-semibold">{s.product}</p></div><div><p className="text-xs text-muted-foreground">Frecuencia</p><p className="mt-1 font-semibold">Cada {s.frequency} días</p></div><div><p className="text-xs text-muted-foreground">Próxima entrega</p><p className="mt-1 font-semibold">{s.next}</p></div><div><p className="text-xs text-muted-foreground">Monto</p><p className="mt-1 font-semibold">{money(s.amount)}</p></div></div><div className="flex flex-wrap items-center gap-2"><Button size="sm" variant="mint" onClick={()=>onNotify(s,"WhatsApp")}><MessageCircle />Recordar</Button><Button size="sm" variant="secondary" onClick={()=>onPay(s)}><CreditCard />Cobrar</Button><select aria-label={`Estado de ${s.customer}`} value={s.status} onChange={(e)=>onStatus(s.id,e.target.value)} className="ml-auto h-8 rounded-md border border-input bg-card px-2 text-xs font-semibold"><option>Activa</option><option>Pausada</option><option>Pendiente de Pago</option><option>Cancelada</option></select></div></article>)}</div>{items.length===0&&<Empty text="No hay suscripciones con este estado."/>}</section> }
+
+function Integrations({ subscriptions, onNotify, onPay }: { subscriptions:Subscription[]; onNotify:(s:Subscription,c:string)=>void; onPay:(s:Subscription)=>void }) { return <div className="grid gap-6 xl:grid-cols-2"><section><SectionHeading title="Centro de notificaciones" text="Seleccioná el canal para simular el envío" /><div className="overflow-hidden rounded-lg border border-border bg-card shadow-xs"><div className="divide-y divide-border">{subscriptions.slice(0,4).map(s=><div key={s.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{s.customer}</p><p className="text-xs text-muted-foreground">Entrega: {s.next}</p></div><div className="flex gap-2"><Button size="sm" variant="mint" onClick={()=>onNotify(s,"WhatsApp")}><MessageCircle />WhatsApp</Button><Button size="sm" variant="secondary" onClick={()=>onNotify(s,"Gmail")}><Mail />Gmail</Button></div></div>)}</div></div></section><section><SectionHeading title="Simulador de cobros" text="Procesá pagos pendientes del período" /><div className="space-y-3">{subscriptions.filter(s=>s.payment==="Pendiente").map(s=><div key={s.id} className="flex items-center gap-3 rounded-lg border border-border bg-card p-4 shadow-xs"><div className="grid size-10 place-items-center rounded-lg bg-chart-4/20 text-chart-1"><CreditCard /></div><div className="flex-1"><p className="text-sm font-bold">{s.customer}</p><p className="text-xs text-muted-foreground">{money(s.amount)} · pendiente</p></div><Button size="sm" onClick={()=>onPay(s)}>Procesar</Button></div>)}<div className="rounded-lg border border-dashed border-border bg-secondary/40 p-5 text-center"><CheckCircle2 className="mx-auto mb-2 size-7 text-accent-foreground"/><p className="text-sm font-bold">Pagos aprobados</p><p className="text-2xl font-extrabold">{subscriptions.filter(s=>s.payment==="Aprobado").length}</p></div></div></section></div> }
+
+function Badge({ value }: { value:string }) { const cls = value==="Activa"||value==="Aprobado" ? "bg-accent/25 text-accent-foreground" : value.includes("Pendiente") ? "bg-chart-4/20 text-chart-1" : value==="Cancelada" ? "bg-destructive/10 text-destructive" : "bg-secondary text-secondary-foreground"; return <span className={cn("inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold whitespace-nowrap",cls)}>{value}</span> }
+function Empty({ text }: {text:string}) { return <div className="p-10 text-center text-sm text-muted-foreground"><Box className="mx-auto mb-2 size-8"/>{text}</div> }
+function Modal({ title, subtitle, close, children }: { title:string; subtitle?:string; close:()=>void; children:ReactNode }) { return <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-4" onMouseDown={(e)=>{if(e.target===e.currentTarget)close()}}><div role="dialog" aria-modal="true" className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-card shadow-2xl"><div className="sticky top-0 flex items-start justify-between border-b border-border bg-card p-5"><div><h2 className="font-display text-lg font-bold">{title}</h2>{subtitle&&<p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>}</div><Button variant="ghost" size="icon" onClick={close} aria-label="Cerrar"><X/></Button></div>{children}</div></div> }
+function Field({ label, children }: {label:string;children:ReactNode}) { return <label className="space-y-1.5 text-sm font-semibold"><span>{label}</span>{children}</label> }
+
+function ProductModal({ product, close, save }: { product:Product|null; close:()=>void; save:(p:Omit<Product,"id"|"sku">)=>void }) { const [form,setForm]=useState({name:product?.name??"",category:product?.category??"Alimentos",price:product?.price??0,stock:product?.stock??0,min:product?.min??0}); const submit=(e:FormEvent)=>{e.preventDefault();save(form)}; return <Modal title={product?"Editar producto":"Agregar producto"} subtitle="Los cambios se guardan durante esta demostración" close={close}><form onSubmit={submit} className="grid gap-4 p-5 sm:grid-cols-2"><Field label="Nombre"><input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className={inputClass}/></Field><Field label="Categoría"><select value={form.category} onChange={e=>setForm({...form,category:e.target.value})} className={inputClass}><option>Alimentos</option><option>Arena Sanitaria</option><option>Higiene</option><option>Accesorios</option></select></Field><Field label="Precio"><input required min="0" type="number" value={form.price} onChange={e=>setForm({...form,price:Number(e.target.value)})} className={inputClass}/></Field><Field label="Stock actual"><input required min="0" type="number" value={form.stock} onChange={e=>setForm({...form,stock:Number(e.target.value)})} className={inputClass}/></Field><Field label="Stock mínimo"><input required min="0" type="number" value={form.min} onChange={e=>setForm({...form,min:Number(e.target.value)})} className={inputClass}/></Field><div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="secondary" onClick={close}>Cancelar</Button><Button type="submit">Guardar producto</Button></div></form></Modal> }
+
+function SubscriptionModal({ products, close, save }: { products:Product[]; close:()=>void; save:(s:Pick<Subscription,"customer"|"email"|"phone"|"product"|"frequency">)=>void }) { const [form,setForm]=useState({customer:"",email:"",phone:"",product:products[0]?.name??"",frequency:30}); return <Modal title="Nueva suscripción" subtitle="Creá un plan de entrega recurrente" close={close}><form onSubmit={(e)=>{e.preventDefault();save(form)}} className="grid gap-4 p-5 sm:grid-cols-2"><Field label="Nombre del cliente"><input required value={form.customer} onChange={e=>setForm({...form,customer:e.target.value})} className={inputClass}/></Field><Field label="Email"><input required type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} className={inputClass}/></Field><Field label="WhatsApp"><input required value={form.phone} onChange={e=>setForm({...form,phone:e.target.value})} className={inputClass}/></Field><Field label="Producto recurrente"><select value={form.product} onChange={e=>setForm({...form,product:e.target.value})} className={inputClass}>{products.map(p=><option key={p.id}>{p.name}</option>)}</select></Field><Field label="Frecuencia"><select value={form.frequency} onChange={e=>setForm({...form,frequency:Number(e.target.value)})} className={inputClass}><option value={15}>Cada 15 días</option><option value={30}>Cada 30 días</option><option value={45}>Cada 45 días</option><option value={60}>Cada 60 días</option></select></Field><Field label="Método de pago"><select className={inputClass}><option>Tarjeta de crédito</option><option>Mercado Pago</option><option>Transferencia</option></select></Field><div className="flex justify-end gap-2 sm:col-span-2"><Button type="button" variant="secondary" onClick={close}>Cancelar</Button><Button type="submit">Crear suscripción</Button></div></form></Modal> }
+function DetailModal({ item, close }: {item:Product;close:()=>void}) { return <Modal title="Detalle del producto" subtitle={item.sku} close={close}><div className="p-5"><div className="mb-5 grid h-32 place-items-center rounded-lg bg-secondary"><ShoppingBag className="size-12 text-primary"/></div><dl className="grid grid-cols-2 gap-4 text-sm"><div><dt className="text-muted-foreground">Nombre</dt><dd className="mt-1 font-bold">{item.name}</dd></div><div><dt className="text-muted-foreground">Categoría</dt><dd className="mt-1"><Badge value={item.category}/></dd></div><div><dt className="text-muted-foreground">Precio</dt><dd className="mt-1 font-bold">{money(item.price)}</dd></div><div><dt className="text-muted-foreground">Disponibilidad</dt><dd className="mt-1 font-bold">{item.stock} unidades</dd></div></dl></div></Modal> }
+function PaymentModal({ subscription, close, process }: {subscription:Subscription;close:()=>void;process:()=>void}) { return <Modal title="Procesar cobro" subtitle="Pasarela de pagos simulada" close={close}><div className="p-5"><div className="rounded-lg bg-secondary p-4"><div className="flex justify-between text-sm"><span className="text-muted-foreground">Cliente</span><b>{subscription.customer}</b></div><div className="mt-3 flex justify-between text-sm"><span className="text-muted-foreground">Plan</span><b>Cada {subscription.frequency} días</b></div><div className="mt-4 flex justify-between border-t border-border pt-4"><span className="font-bold">Total</span><strong className="font-display text-xl">{money(subscription.amount)}</strong></div></div><div className="mt-4 grid grid-cols-[1fr_auto] gap-3"><input aria-label="Tarjeta simulada" value="•••• •••• •••• 4242" readOnly className={inputClass}/><div className="grid place-items-center rounded-lg border border-border px-3"><CreditCard className="text-primary"/></div></div><div className="mt-5 flex justify-end gap-2"><Button variant="secondary" onClick={close}>Cancelar</Button><Button onClick={process}><CheckCircle2/>Confirmar pago</Button></div></div></Modal> }
