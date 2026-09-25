@@ -8,3 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## Architecture
+
+- Keep the PetShop Manager prototype frontend-only with in-memory React state, because the requested demo must reset on reload and use no backend.
