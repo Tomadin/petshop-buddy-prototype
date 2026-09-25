@@ -23,34 +23,63 @@ export const Route = createFileRoute("/")({
 });
 
 type View = "dashboard" | "inventory" | "subscriptions" | "integrations";
+type StoreName = "Palermo Soho" | "Belgrano" | "Caballito";
 type Product = { id: number; name: string; category: string; price: number; stock: number; min: number; sku: string };
 type Subscription = { id: number; customer: string; email: string; phone: string; product: string; frequency: number; status: string; amount: number; next: string; payment: string };
 
-const initialProducts: Product[] = [
-  { id: 1, name: "Royal Canin Adulto 15 kg", category: "Alimentos", price: 68900, stock: 8, min: 10, sku: "ALI-1042" },
-  { id: 2, name: "Arena aglomerante Fresh 10 kg", category: "Arena Sanitaria", price: 18400, stock: 6, min: 8, sku: "ARE-2081" },
-  { id: 3, name: "Shampoo neutro PetCare", category: "Higiene", price: 11200, stock: 24, min: 6, sku: "HIG-3024" },
-  { id: 4, name: "Correa reflectiva Lima", category: "Accesorios", price: 14900, stock: 18, min: 5, sku: "ACC-4107" },
-  { id: 5, name: "Excellent Gato Adulto 7,5 kg", category: "Alimentos", price: 42700, stock: 4, min: 7, sku: "ALI-1058" },
-  { id: 6, name: "Cepillo doble Bamboo", category: "Higiene", price: 9800, stock: 15, min: 5, sku: "HIG-3070" },
-];
+const initialProducts: Record<StoreName, Product[]> = {
+  "Palermo Soho": [
+    { id: 1, name: "Royal Canin Adulto 15 kg", category: "Alimentos", price: 68900, stock: 8, min: 10, sku: "PAL-ALI-1042" },
+    { id: 2, name: "Arena aglomerante Fresh 10 kg", category: "Arena Sanitaria", price: 18400, stock: 6, min: 8, sku: "PAL-ARE-2081" },
+    { id: 3, name: "Shampoo neutro PetCare", category: "Higiene", price: 11200, stock: 24, min: 6, sku: "PAL-HIG-3024" },
+    { id: 4, name: "Correa reflectiva Lima", category: "Accesorios", price: 14900, stock: 18, min: 5, sku: "PAL-ACC-4107" },
+    { id: 5, name: "Excellent Gato Adulto 7,5 kg", category: "Alimentos", price: 42700, stock: 4, min: 7, sku: "PAL-ALI-1058" },
+    { id: 6, name: "Cepillo doble Bamboo", category: "Higiene", price: 9800, stock: 15, min: 5, sku: "PAL-HIG-3070" },
+  ],
+  Belgrano: [
+    { id: 101, name: "Pro Plan Sensitive Skin 12 kg", category: "Alimentos", price: 74600, stock: 16, min: 8, sku: "BEL-ALI-1101" },
+    { id: 102, name: "Piedras sanitarias Absorsol 8 kg", category: "Arena Sanitaria", price: 12600, stock: 3, min: 10, sku: "BEL-ARE-2102" },
+    { id: 103, name: "Pipeta antipulgas Canis", category: "Higiene", price: 13500, stock: 7, min: 9, sku: "BEL-HIG-3103" },
+    { id: 104, name: "Cama nórdica mediana", category: "Accesorios", price: 38900, stock: 9, min: 3, sku: "BEL-ACC-4104" },
+    { id: 105, name: "Old Prince Cordero 15 kg", category: "Alimentos", price: 51900, stock: 21, min: 8, sku: "BEL-ALI-1105" },
+  ],
+  Caballito: [
+    { id: 201, name: "Vitalcan Balanced Adulto 20 kg", category: "Alimentos", price: 58200, stock: 12, min: 9, sku: "CAB-ALI-1201" },
+    { id: 202, name: "Arena ecológica EcoCat 12 L", category: "Arena Sanitaria", price: 21500, stock: 14, min: 6, sku: "CAB-ARE-2202" },
+    { id: 203, name: "Acondicionador hipoalergénico", category: "Higiene", price: 10400, stock: 5, min: 7, sku: "CAB-HIG-3203" },
+    { id: 204, name: "Pretal ergonómico azul", category: "Accesorios", price: 19800, stock: 4, min: 6, sku: "CAB-ACC-4204" },
+  ],
+};
 
-const initialSubscriptions: Subscription[] = [
-  { id: 1, customer: "Marina López", email: "marina@email.com", phone: "+54 9 11 3890 2214", product: "Royal Canin Adulto 15 kg", frequency: 30, status: "Activa", amount: 68900, next: "Hoy, 14:30", payment: "Aprobado" },
-  { id: 2, customer: "Santiago Ríos", email: "santi@email.com", phone: "+54 9 11 5521 9012", product: "Arena aglomerante Fresh 10 kg", frequency: 15, status: "Pendiente de Pago", amount: 36800, next: "Hoy, 17:00", payment: "Pendiente" },
-  { id: 3, customer: "Julieta Acosta", email: "juli@email.com", phone: "+54 9 11 6810 4420", product: "Excellent Gato Adulto 7,5 kg", frequency: 30, status: "Activa", amount: 42700, next: "Mañana, 10:00", payment: "Aprobado" },
-  { id: 4, customer: "Tomás Méndez", email: "tomas@email.com", phone: "+54 9 11 2219 1305", product: "Shampoo neutro PetCare", frequency: 60, status: "Pausada", amount: 22400, next: "28 Sep, 12:00", payment: "Aprobado" },
-  { id: 5, customer: "Carolina Vega", email: "caro@email.com", phone: "+54 9 11 4900 8112", product: "Royal Canin Adulto 15 kg", frequency: 45, status: "Activa", amount: 68900, next: "30 Sep, 09:30", payment: "Aprobado" },
-];
+const initialSubscriptions: Record<StoreName, Subscription[]> = {
+  "Palermo Soho": [
+    { id: 1, customer: "Marina López", email: "marina@email.com", phone: "+54 9 11 3890 2214", product: "Royal Canin Adulto 15 kg", frequency: 30, status: "Activa", amount: 68900, next: "Hoy, 14:30", payment: "Aprobado" },
+    { id: 2, customer: "Santiago Ríos", email: "santi@email.com", phone: "+54 9 11 5521 9012", product: "Arena aglomerante Fresh 10 kg", frequency: 15, status: "Pendiente de Pago", amount: 36800, next: "Hoy, 17:00", payment: "Pendiente" },
+    { id: 3, customer: "Julieta Acosta", email: "juli@email.com", phone: "+54 9 11 6810 4420", product: "Excellent Gato Adulto 7,5 kg", frequency: 30, status: "Activa", amount: 42700, next: "Mañana, 10:00", payment: "Aprobado" },
+    { id: 4, customer: "Tomás Méndez", email: "tomas@email.com", phone: "+54 9 11 2219 1305", product: "Shampoo neutro PetCare", frequency: 60, status: "Pausada", amount: 22400, next: "28 Sep, 12:00", payment: "Aprobado" },
+    { id: 5, customer: "Carolina Vega", email: "caro@email.com", phone: "+54 9 11 4900 8112", product: "Royal Canin Adulto 15 kg", frequency: 45, status: "Activa", amount: 68900, next: "30 Sep, 09:30", payment: "Aprobado" },
+  ],
+  Belgrano: [
+    { id: 101, customer: "Agustín Ferraro", email: "agus@email.com", phone: "+54 9 11 6210 3401", product: "Pro Plan Sensitive Skin 12 kg", frequency: 30, status: "Activa", amount: 74600, next: "Hoy, 11:00", payment: "Aprobado" },
+    { id: 102, customer: "Valentina Paz", email: "vale@email.com", phone: "+54 9 11 4022 7180", product: "Piedras sanitarias Absorsol 8 kg", frequency: 15, status: "Pendiente de Pago", amount: 25200, next: "Mañana, 16:30", payment: "Pendiente" },
+    { id: 103, customer: "Federico Luna", email: "fede@email.com", phone: "+54 9 11 3108 9055", product: "Old Prince Cordero 15 kg", frequency: 45, status: "Activa", amount: 51900, next: "29 Sep, 13:00", payment: "Aprobado" },
+    { id: 104, customer: "Daniela Suárez", email: "dani@email.com", phone: "+54 9 11 4770 1209", product: "Pipeta antipulgas Canis", frequency: 60, status: "Cancelada", amount: 13500, next: "Sin programar", payment: "Pendiente" },
+  ],
+  Caballito: [
+    { id: 201, customer: "Nicolás Peralta", email: "nico@email.com", phone: "+54 9 11 2901 7732", product: "Vitalcan Balanced Adulto 20 kg", frequency: 30, status: "Activa", amount: 58200, next: "Hoy, 18:00", payment: "Aprobado" },
+    { id: 202, customer: "Luciana Bravo", email: "luci@email.com", phone: "+54 9 11 5088 6410", product: "Arena ecológica EcoCat 12 L", frequency: 30, status: "Pausada", amount: 21500, next: "2 Oct, 10:30", payment: "Aprobado" },
+    { id: 203, customer: "Martín Castro", email: "martin@email.com", phone: "+54 9 11 3391 2268", product: "Pretal ergonómico azul", frequency: 60, status: "Pendiente de Pago", amount: 19800, next: "Mañana, 12:00", payment: "Pendiente" },
+  ],
+};
 
 const money = (n: number) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 const inputClass = "h-10 w-full rounded-lg border border-input bg-card px-3 text-sm outline-hidden transition focus:border-primary focus:ring-3 focus:ring-ring/15";
 
 function Index() {
   const [view, setView] = useState<View>("dashboard");
-  const [products, setProducts] = useState(initialProducts);
-  const [subscriptions, setSubscriptions] = useState(initialSubscriptions);
-  const [store, setStore] = useState("Palermo Soho");
+  const [productsByStore, setProductsByStore] = useState(initialProducts);
+  const [subscriptionsByStore, setSubscriptionsByStore] = useState(initialSubscriptions);
+  const [store, setStore] = useState<StoreName>("Palermo Soho");
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [modal, setModal] = useState<null | "product" | "subscription" | "detail" | "payment">(null);
@@ -60,8 +89,19 @@ function Index() {
   const [category, setCategory] = useState("Todas");
   const [statusFilter, setStatusFilter] = useState("Todas");
 
+  const products = productsByStore[store];
+  const subscriptions = subscriptionsByStore[store];
+  const setProducts = (update: (items: Product[]) => Product[]) => setProductsByStore((all) => ({ ...all, [store]: update(all[store]) }));
+  const setSubscriptions = (update: (items: Subscription[]) => Subscription[]) => setSubscriptionsByStore((all) => ({ ...all, [store]: update(all[store]) }));
+  const changeStore = (next: string) => {
+    setStore(next as StoreName);
+    setSearch("");
+    setCategory("Todas");
+    setStatusFilter("Todas");
+    setModal(null);
+    toast.success(`Ahora estás viendo ${next}`);
+  };
   const lowStock = products.filter((p) => p.stock <= p.min);
-  const active = subscriptions.filter((s) => s.status === "Activa");
   const filteredProducts = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()) && (category === "Todas" || p.category === category));
   const filteredSubscriptions = subscriptions.filter((s) => statusFilter === "Todas" || s.status === statusFilter);
 
@@ -71,7 +111,7 @@ function Index() {
     <div className="min-h-screen bg-background text-foreground">
       <Toaster position="top-right" richColors />
       {mobileOpen && <button aria-label="Cerrar menú" className="fixed inset-0 z-30 bg-foreground/30 lg:hidden" onClick={() => setMobileOpen(false)} />}
-      <Sidebar view={view} navigate={navigate} store={store} setStore={setStore} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} />
+      <Sidebar view={view} navigate={navigate} store={store} setStore={changeStore} collapsed={collapsed} setCollapsed={setCollapsed} mobileOpen={mobileOpen} />
       <div className={cn("min-h-screen transition-[margin] duration-300", collapsed ? "lg:ml-20" : "lg:ml-64")}>
         <Header view={view} store={store} openMenu={() => setMobileOpen(true)} />
         <main className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8">
