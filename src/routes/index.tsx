@@ -28,7 +28,7 @@ type StoreName = "Palermo Soho" | "Belgrano" | "Caballito";
 type Product = { id: number; name: string; category: string; price: number; stock: number; min: number; sku: string };
 type PlanItem = { product: string; qty: number };
 type Plan = { id: number; name: string; description: string; items: PlanItem[] };
-type Subscription = { plan?: string; extras?: PlanItem[]; id: number; customer: string; email: string; phone: string; product: string; frequency: number; status: string; amount: number; delivery: Delivery; shipping: number; address?: string; next: string; payment: string };
+type Subscription = { plan?: string; extras?: PlanItem[]; id: number; customer: string; email: string; phone: string; product: string; frequency: number; status: string; amount: number; delivery: Delivery; shipping: number; address?: string | undefined; next: string; payment: string };
 const initialShipping: Record<"Palermo Soho" | "Belgrano" | "Caballito", number> = { "Palermo Soho": 3500, Belgrano: 4200, Caballito: 2800 };
 
 const initialProducts: Record<StoreName, Product[]> = {
