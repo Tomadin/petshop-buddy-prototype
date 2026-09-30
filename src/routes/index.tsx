@@ -130,6 +130,7 @@ function Index() {
     setCategory("Todas");
     setStatusFilter("Todas");
     setModal(null);
+    setStatusChange(null);
     toast.success(`Ahora estás viendo ${next}`);
   };
   const lowStock = products.filter((p) => p.stock <= p.min);
