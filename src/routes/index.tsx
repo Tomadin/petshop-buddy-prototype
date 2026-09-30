@@ -112,9 +112,10 @@ function Index() {
   const shippingCost = shippingByStore[store];
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [modal, setModal] = useState<null | "product" | "plan" | "subscription" | "detail" | "payment">(null);
+  const [modal, setModal] = useState<null | "product" | "plan" | "subscription" | "detail" | "payment" | "status">(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [selected, setSelected] = useState<Subscription | Product | null>(null);
+  const [statusChange, setStatusChange] = useState<{ sub: Subscription; value: string } | null>(null);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Todas");
   const [statusFilter, setStatusFilter] = useState("Todas");
