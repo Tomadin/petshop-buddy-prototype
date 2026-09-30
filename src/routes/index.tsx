@@ -159,6 +159,7 @@ function Index() {
       {modal === "subscription" && <SubscriptionModal shippingCost={shippingCost} plans={plans} products={products} close={() => setModal(null)} save={(data) => { setSubscriptions((all) => [...all, { ...data, id: Date.now(), next: "A programar", status: "Activa", payment: "Pendiente" }]); setModal(null); toast.success("Suscripción creada"); }} />}
       {modal === "detail" && selected && <DetailModal item={selected as Product} close={() => setModal(null)} />}
       {modal === "payment" && selected && <PaymentModal subscription={selected as Subscription} close={() => setModal(null)} process={() => { const id = (selected as Subscription).id; setSubscriptions((all) => all.map((s) => s.id === id ? { ...s, payment: "Aprobado", status: "Activa" } : s)); setModal(null); toast.success("Pago procesado con éxito"); }} />}
+      {modal === "status" && statusChange && <StatusConfirmModal subscription={statusChange.sub} next={statusChange.value} close={() => { setModal(null); setStatusChange(null); }} confirm={() => { const { sub, value } = statusChange; setSubscriptions((all) => all.map((s) => s.id === sub.id ? { ...s, status: value } : s)); setStatusChange(null); setModal(null); toast.success(`Suscripción de ${sub.customer} actualizada`, { description: `Nuevo estado: ${value}` }); }} />}
     </div>
   );
 }
